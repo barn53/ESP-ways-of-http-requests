@@ -40,9 +40,12 @@ void setupWiFi()
 
 void method1()
 {
-    Serial.println("\nMethod 1: complete http response as string - ineffective");
+    Serial.println("\nMethod 1: complete http response as string - inefficient for larger json");
 
     HTTPClient http;
+
+    // can use HTTP1.1 with chunked transfer
+    http.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
 
     http.begin("http://worldtimeapi.org/api/timezone/Europe/Berlin");
     int httpCode = http.GET();
@@ -61,6 +64,7 @@ void method2()
     Serial.println("\nMethd 2: Use HTTP stream for ArduinoJSON");
 
     HTTPClient http;
+
     http.useHTTP10(true); // stream is only available with HTTP1.0 (no chunked transfer)
     http.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
 
@@ -85,7 +89,10 @@ void method3()
     WiFiClient client;
     HTTPClient http;
 
-    http.begin(client, "http://worldtimeapi.org", 80, "/api/timezone/Europe/Berlin", false);
+    http.useHTTP10(true); // stream is only available with HTTP1.0 (no chunked transfer)
+    http.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
+
+    http.begin(client, "worldtimeapi.org", 80, "/api/timezone/Europe/Berlin", false);
     int httpCode = http.GET();
     if (httpCode > 0) {
         Serial.printf("[HTTP] GET... code: %d\n", httpCode);
@@ -101,16 +108,17 @@ void method3()
 
 void method4()
 {
-    Serial.println("\nMethod 4: HTTPS with WifiClientSecure (insecure) stream ArduinoJSON");
+    Serial.println("\nMethod 4: HTTPS with WifiClientSecure (set to insecure) stream ArduinoJSON");
 
     WiFiClientSecure client;
     HTTPClient http;
 
     client.setInsecure();
 
-    http.begin(client, "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=eur&include_24hr_change=true");
-    http.useHTTP10(true);
+    http.useHTTP10(true); // stream is only available with HTTP1.0 (no chunked transfer)
     http.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
+
+    http.begin(client, "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=eur&include_24hr_change=true");
     int httpCode = http.GET();
     if (httpCode > 0) {
         Serial.printf("[HTTP] GET... code: %d\n", httpCode);
